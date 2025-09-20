@@ -1,9 +1,9 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import {
-  HttpEvent,
-  HttpHandler,
   HttpInterceptor,
   HttpRequest,
+  HttpHandler,
+  HttpEvent,
   HttpErrorResponse,
 } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
@@ -11,9 +11,10 @@ import { catchError } from 'rxjs/operators';
 import { Router } from '@angular/router';
 import { ToastrService } from 'ngx-toastr';
 
-@Injectable()
+@Injectable({ providedIn: 'root' })
 export class AuthInterceptor implements HttpInterceptor {
-  constructor(private router: Router, private toastr: ToastrService) {}
+  private router = inject(Router);
+  private toastr = inject(ToastrService);
 
   intercept(
     req: HttpRequest<any>,
@@ -21,18 +22,13 @@ export class AuthInterceptor implements HttpInterceptor {
   ): Observable<HttpEvent<any>> {
     const token = localStorage.getItem('token');
 
-    let authReq = req;
-    if (token) {
-      authReq = req.clone({
-        setHeaders: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-    }
+    const authReq = token
+      ? req.clone({ setHeaders: { Authorization: `Bearer ${token}` } })
+      : req;
 
     return next.handle(authReq).pipe(
-      catchError((error: HttpErrorResponse) => {
-        if (error.status === 401) {
+      catchError((err: HttpErrorResponse) => {
+        if (err.status === 401) {
           localStorage.removeItem('token');
           this.toastr.info(
             'Session expired. Please log in again.',
@@ -40,7 +36,7 @@ export class AuthInterceptor implements HttpInterceptor {
           );
           this.router.navigateByUrl('/login');
         }
-        return throwError(() => error);
+        return throwError(() => err);
       })
     );
   }
