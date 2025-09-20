@@ -396,6 +396,11 @@ export class SummaryComponent implements OnInit {
     return `${selectedVisiblePS} selected`; // some selected
   }
 
+  trackByModelId(index: number, model: any): string {
+  return model.model; // or model.id if you have a unique id
+}
+
+
   filteredPSs() {
     let psList = this.users;
 
@@ -1300,6 +1305,7 @@ export class SummaryComponent implements OnInit {
   //   this.loadDealers('DAY', 'all', null, modelParam);
   // }
   callAPI() {
+    console.log("")
     const modelParam = this.selectedModels.length
       ? this.selectedModels.join(',')
       : 'all';
@@ -1403,4 +1409,18 @@ export class SummaryComponent implements OnInit {
       setTimeout(() => (this.tooltipText = null), 2000);
     }
   }
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
 }
