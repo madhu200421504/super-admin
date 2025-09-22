@@ -4813,7 +4813,6 @@ tbody tr:nth-child(odd) {
   display: inline-flex;
 }
 
-
 @media (max-width: 844px) {
   /* Ye CSS sirf tab chalega jab screen 767px ya usse chhoti ho (mobiles) */
   .header2 {
@@ -4881,7 +4880,6 @@ tbody tr:nth-child(odd) {
   .table-header {
     white-space: break-spaces !important;
   }
-  
 }
 .clickable {
   cursor: pointer;

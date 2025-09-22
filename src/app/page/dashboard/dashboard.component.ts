@@ -475,13 +475,24 @@ export class DashboardComponent implements AfterViewInit, OnInit {
       return totalB - totalA; // descending by total calls
     });
   }
+  // getSortedDealersForCallLogs() {
+  //   const list =
+  //     this.selectedDealers.length > 0 ? this.selectedDealers : this.dealers;
+  //   return [...list].sort((a, b) => {
+  //     const totalA = a.callLogs?.totalCalls ?? 0;
+  //     const totalB = b.callLogs?.totalCalls ?? 0;
+  //     return totalB - totalA; // sort descending by total calls
+  //   });
+  // }
   getSortedDealersForCallLogs() {
     const list =
       this.selectedDealers.length > 0 ? this.selectedDealers : this.dealers;
+    if (!list) return [];
+
     return [...list].sort((a, b) => {
-      const totalA = a.callLogs?.totalCalls ?? 0;
-      const totalB = b.callLogs?.totalCalls ?? 0;
-      return totalB - totalA; // sort descending by total calls
+      const totalA = this.getDealerCalls(a)?.totalCalls ?? 0;
+      const totalB = this.getDealerCalls(b)?.totalCalls ?? 0;
+      return totalB - totalA; // descending
     });
   }
 
@@ -2628,15 +2639,102 @@ export class DashboardComponent implements AfterViewInit, OnInit {
     console.log('Dealer call logs CSV exported successfully');
   }
 
+  // toggleSummaryRow(event: Event, dealer: any): void {
+  //   event.stopPropagation();
+  //   const id = dealer.dealerId;
+  //   this.expandedSummaryRow = this.expandedSummaryRow === id ? null : id;
+
+  //   const token = localStorage.getItem('token');
+  //   if (!token) return;
+
+  //   // set loading state
+  //   this.loadingUsers[id] = true;
+
+  //   let request$;
+  //   if (
+  //     this.selectedFilter === 'CUSTOM' &&
+  //     this.customStartDate &&
+  //     this.customEndDate
+  //   ) {
+  //     request$ = this.dashboardService.getDealersByCustomDate(
+  //       this.customStartDate,
+  //       this.customEndDate,
+  //       token,
+  //       id
+  //     );
+  //   } else {
+  //     request$ = this.dashboardService.getDealerUsers(
+  //       id,
+  //       this.selectedFilter,
+  //       token
+  //     );
+  //   }
+
+  //   request$.subscribe({
+  //     next: (res: any) => {
+  //       this.loadingUsers[id] = false;
+
+  //       const dealerData = Array.isArray(res?.data?.dealerData)
+  //         ? res.data.dealerData.find((d: any) => d.dealerId === id)
+  //         : res?.data?.dealerData;
+
+  //       if (!dealerData) {
+  //         this.dealerUsers[id] = [];
+  //         this.dealerCallLogs[id] = null;
+  //         this.userCallLogs[id] = [];
+  //         return;
+  //       }
+
+  //       // ✅ Save users
+  //       this.dealerUsers[id] = dealerData.users || [];
+
+  //       // ✅ Save dealer-level call logs
+  //       this.dealerCallLogs[id] = dealerData.callLogs ?? null;
+
+  //       // ✅ Map user call logs
+  //       this.userCallLogs[id] =
+  //         dealerData.users?.map((user: any) => {
+  //           const durationSec = Number(user.calls?.durationSec ?? 0);
+
+  //           return {
+  //             userId: user.user_id,
+  //             name: user.user,
+  //             role: user.user_role,
+  //             active: user.active,
+  //             calls: {
+  //               total: Number(user.calls?.totalCalls ?? 0),
+  //               outgoing: Number(user.calls?.outgoing ?? 0),
+  //               incoming: Number(user.calls?.incoming ?? 0),
+  //               connected: Number(user.calls?.connected ?? 0),
+  //               declined: Number(user.calls?.declined ?? 0),
+  //               duration: this.formatDuration(durationSec),
+  //               durationSec,
+  //             },
+  //           };
+  //         }) || [];
+
+  //       this.cd.detectChanges();
+  //     },
+  //     error: (err) => {
+  //       this.loadingUsers[id] = false;
+  //       console.error(err);
+  //       this.dealerUsers[id] = [];
+  //       this.dealerCallLogs[id] = null;
+  //       this.userCallLogs[id] = [];
+  //     },
+  //   });
+  // }
   toggleSummaryRow(event: Event, dealer: any): void {
     event.stopPropagation();
     const id = dealer.dealerId;
     this.expandedSummaryRow = this.expandedSummaryRow === id ? null : id;
 
+    // If already loaded, just toggle without HTTP
+    if (this.dealerUsers[id]?.length) return;
+
     const token = localStorage.getItem('token');
     if (!token) return;
 
-    // set loading state
     this.loadingUsers[id] = true;
 
     let request$;
@@ -2662,57 +2760,41 @@ export class DashboardComponent implements AfterViewInit, OnInit {
     request$.subscribe({
       next: (res: any) => {
         this.loadingUsers[id] = false;
-
         const dealerData = Array.isArray(res?.data?.dealerData)
           ? res.data.dealerData.find((d: any) => d.dealerId === id)
           : res?.data?.dealerData;
 
-        if (!dealerData) {
-          this.dealerUsers[id] = [];
-          this.dealerCallLogs[id] = null;
-          this.userCallLogs[id] = [];
-          return;
-        }
-
-        // ✅ Save users
-        this.dealerUsers[id] = dealerData.users || [];
-
-        // ✅ Save dealer-level call logs
-        this.dealerCallLogs[id] = dealerData.callLogs ?? null;
-
-        // ✅ Map user call logs
+        this.dealerUsers[id] = dealerData?.users || [];
+        this.dealerCallLogs[id] = dealerData?.callLogs ?? null;
         this.userCallLogs[id] =
-          dealerData.users?.map((user: any) => {
-            const durationSec = Number(user.calls?.durationSec ?? 0);
-
-            return {
-              userId: user.user_id,
-              name: user.user,
-              role: user.user_role,
-              active: user.active,
-              calls: {
-                total: Number(user.calls?.totalCalls ?? 0),
-                outgoing: Number(user.calls?.outgoing ?? 0),
-                incoming: Number(user.calls?.incoming ?? 0),
-                connected: Number(user.calls?.connected ?? 0),
-                declined: Number(user.calls?.declined ?? 0),
-                duration: this.formatDuration(durationSec),
-                durationSec,
-              },
-            };
-          }) || [];
-
+          dealerData?.users?.map((user: any) => ({
+            userId: user.user_id,
+            name: user.user,
+            role: user.user_role,
+            active: user.active,
+            calls: {
+              total: Number(user.calls?.totalCalls ?? 0),
+              outgoing: Number(user.calls?.outgoing ?? 0),
+              incoming: Number(user.calls?.incoming ?? 0),
+              connected: Number(user.calls?.connected ?? 0),
+              declined: Number(user.calls?.declined ?? 0),
+              duration: this.formatDuration(
+                Number(user.calls?.durationSec ?? 0)
+              ),
+              durationSec: Number(user.calls?.durationSec ?? 0),
+            },
+          })) || [];
         this.cd.detectChanges();
       },
-      error: (err) => {
+      error: () => {
         this.loadingUsers[id] = false;
-        console.error(err);
         this.dealerUsers[id] = [];
         this.dealerCallLogs[id] = null;
         this.userCallLogs[id] = [];
       },
     });
   }
+
   // toggleCallLogsRow(event: Event, dealer: any): void {
   //   event.stopPropagation();
   //   const id = dealer.dealerId;

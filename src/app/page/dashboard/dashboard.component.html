@@ -13,6 +13,7 @@
   </div>
   <div class="header2" [ngClass]="{ 'sidebar-open': isSidebarOpen, 'sidebar-closed': !isSidebarOpen }"
     style="border-radius:7px;padding:10px;margin-top:1rem;">
+
     <div class="filter-message mb-2" *ngIf="selectedFilter">
       Showing results for:
       <span *ngIf="selectedFilter !== 'CUSTOM'">{{ getFilterLabel(selectedFilter) }}</span>
