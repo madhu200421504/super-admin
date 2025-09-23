@@ -310,7 +310,7 @@ export class DashboardComponent implements AfterViewInit, OnInit {
     private cd: ChangeDetectorRef,
     private eRef: ElementRef,
     private toastr: ToastrService
-  ) {}
+  ) { }
   data: any; // To hold your data
   apiUrl: string = 'https://uat.smartassistapp.in/api/superAdmin/dashbaordNew';
 
@@ -475,13 +475,16 @@ export class DashboardComponent implements AfterViewInit, OnInit {
       return totalB - totalA; // descending by total calls
     });
   }
+
   getSortedDealersForCallLogs() {
     const list =
       this.selectedDealers.length > 0 ? this.selectedDealers : this.dealers;
+    if (!list) return [];
+
     return [...list].sort((a, b) => {
-      const totalA = a.callLogs?.totalCalls ?? 0;
-      const totalB = b.callLogs?.totalCalls ?? 0;
-      return totalB - totalA; // sort descending by total calls
+      const totalA = this.getDealerCalls(a)?.totalCalls ?? 0;
+      const totalB = this.getDealerCalls(b)?.totalCalls ?? 0;
+      return totalB - totalA; // descending
     });
   }
 
@@ -548,7 +551,7 @@ export class DashboardComponent implements AfterViewInit, OnInit {
     }
   }
 
-  onFilterClick(filter: 'MTD' | 'QTD' | 'YTD') {}
+  onFilterClick(filter: 'MTD' | 'QTD' | 'YTD') { }
 
   toggleShowAllSMs(dealerId: string) {
     this.showAllSMs[dealerId] = !this.showAllSMs[dealerId];
@@ -2295,8 +2298,8 @@ export class DashboardComponent implements AfterViewInit, OnInit {
         this.sortDirection === 'asc'
           ? 'desc'
           : this.sortDirection === 'desc'
-          ? 'default'
-          : 'asc';
+            ? 'default'
+            : 'asc';
     } else {
       this.sortColumn = column;
       this.sortDirection = 'asc';
@@ -2569,8 +2572,8 @@ export class DashboardComponent implements AfterViewInit, OnInit {
       this.displayedDealers?.length > 0
         ? [...this.displayedDealers] // clone to avoid mutating table data
         : this.selectedDealers.length > 0
-        ? [...this.selectedDealers]
-        : [...this.dealers];
+          ? [...this.selectedDealers]
+          : [...this.dealers];
 
     if (!list || list.length === 0) {
       console.warn('No dealers to export');
@@ -2807,14 +2810,14 @@ export class DashboardComponent implements AfterViewInit, OnInit {
 
     let request$ =
       this.selectedFilter === 'CUSTOM' &&
-      this.customStartDate &&
-      this.customEndDate
+        this.customStartDate &&
+        this.customEndDate
         ? this.dashboardService.getDealersByCustomDate(
-            this.customStartDate,
-            this.customEndDate,
-            token,
-            id
-          )
+          this.customStartDate,
+          this.customEndDate,
+          token,
+          id
+        )
         : this.dashboardService.getDealerUsers(id, this.selectedFilter, token);
 
     request$.subscribe({
